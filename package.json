@@ -1,0 +1,64 @@
+{
+	"name": "vscode-cppbuild",
+	"displayName": "Build ++",
+	"description": "Build Tool for VS Code C/C++ extension",
+	"version": "1.0.0",
+	"preview": true,
+	"icon": "icon.png",
+	"publisher": "tdjastrzebski",
+	"author": {
+		"name": "Tomasz Jastrzębski"
+	},
+	"license": "See license in LICENSE.txt",
+	"readme": "README.md",
+	"keywords": [
+		"C",
+		"C++",
+		"build"
+	],
+	"categories": [
+		"Programming Languages",
+		"Other"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/tdjastrzebski/vscode-cppbuild.git"
+	},
+	"engines": {
+		"vscode": "^1.37.0"
+	},
+	"main": "./out/main.js",
+	"activationEvents": [
+		"*"
+	],
+	"contributes": {
+		"taskDefinitions": [
+			{
+				"type": "cppbuild"
+			}
+		],
+		"jsonValidation": [
+			{
+				"fileMatch": "c_cpp_build.json",
+				"url": "./node_modules/cppbuild/c_cpp_build.schema.json"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w"
+	},
+	"dependencies": {
+		"@types/glob": "^7.1.1",
+		"cppbuild": "^1.0.0",
+		"vscode-cpptools": "^3.0.1"
+	},
+	"devDependencies": {
+		"@types/node": "^12.7.12",
+		"@types/vscode": "^1.37.0",
+		"tslint": "^5.19.0",
+		"typescript": "^3.6.4",
+		"vscode-test": "^1.2.0"
+	}
+}
