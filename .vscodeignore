@@ -6,4 +6,5 @@ src/**
 **/*.map
 .gitignore
 tsconfig.json
-references.txt
+*.txt
+*.vsdx
