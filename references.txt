@@ -42,5 +42,6 @@ https://stackoverflow.com/questions/50274547/windows-clang-hello-world-lnk4217/5
 Publishing VS Code Extension
 https://code.visualstudio.com/api/working-with-extensions/publishing-extension
 https://code.visualstudio.com/api/working-with-extensions/bundling-extension
+
 vsce package
 https://marketplace.visualstudio.com/manage/publishers/tdjastrzebski

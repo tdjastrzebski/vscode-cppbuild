@@ -1,8 +1,8 @@
 {
 	"name": "vscode-cppbuild",
-	"displayName": "Build ++",
+	"displayName": "Build++",
 	"description": "Multi-step build Tool for VS Code C/C++ extension",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"preview": true,
 	"icon": "icon.png",
 	"publisher": "tdjastrzebski",
@@ -51,11 +51,11 @@
 	},
 	"dependencies": {
 		"@types/glob": "^7.1.1",
-		"cppbuild": "^1.0.0",
+		"cppbuild": "^1.0.1",
 		"vscode-cpptools": "^3.0.1"
 	},
 	"devDependencies": {
-		"@types/node": "^12.7.12",
+		"@types/node": "^12.11.1",
 		"@types/vscode": "^1.37.0",
 		"tslint": "^5.19.0",
 		"typescript": "^3.6.4",
