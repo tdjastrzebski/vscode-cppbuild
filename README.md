@@ -14,6 +14,5 @@ Since [ms-vscode.cpptools](https://marketplace.visualstudio.com/items?itemName=m
 1. Go to menu **Terminal** and choose **Run Task..** option.  
 You should see additional build tasks available.
 1. Modify created `c_cpp_build.json` file according to your needs.  
-Detailed `c_cpp_build.json` file description is available at [cppbuild](https://github.com/tdjastrzebski/cppbuild/).
-
-> Note: `c_cpp_build.json` file must contain configurations named exactly like those defined in `c_cpp_properties.json` file.
+Detailed `c_cpp_build.json` file description is available at [cppbuild](https://github.com/tdjastrzebski/cppbuild/).  
+Note: `c_cpp_build.json` file must contain configurations named exactly like those defined in `c_cpp_properties.json` file.

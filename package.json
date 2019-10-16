@@ -2,7 +2,7 @@
 	"name": "vscode-cppbuild",
 	"displayName": "Build ++",
 	"description": "Multi-step build Tool for VS Code C/C++ extension",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"preview": true,
 	"icon": "icon.png",
 	"publisher": "tdjastrzebski",
