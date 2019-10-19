@@ -5,7 +5,8 @@
 # How to use it?
 1. Install command line [cppbuild](https://github.com/tdjastrzebski/cppbuild/) tool: `npm install cppbuild -g`
 1. Go to menu **Terminal** and choose **Run Task...** option.  
-You should see additional build tasks available.
+You should see additional build tasks available.  
+By default, build output files are placed in `./build` folder.
 1. Modify created `c_cpp_build.json` file according to your needs.  
 Detailed `c_cpp_build.json` file description is available at [cppbuild](https://github.com/tdjastrzebski/cppbuild/) GitHub site.
 
