@@ -69,9 +69,9 @@ async function createInitialBuildFile(): Promise<boolean> {
 				bSteps.push({ name: 'Test if \'ScopeCppSDK\' path variable is set.', command: 'cmd.exe /C \"echo %ScopeCppSDK%\"' });
 				bTypes.push({ name: 'debug', params: { buildTypeParams: '/MDd /Od /RTCsu /Zi /Fd[build/${buildTypeName}/main.pdb]', linkTypeParams: '/DEBUG' } });
 				bTypes.push({ name: 'release', params: { buildTypeParams: '/MD /Ox', linkTypeParams: '' } });
-				command = 'cl.exe ${buildTypeParams} /EHs /GR /GF /W3 /EHsc /FS /c (/I[$${includePath}]) (/D\"$${defines}\") (/FI[$${forcedInclude}]) [${filePath}] /Fo[${outputDirectory}/${fileName}.o]';
+				command = 'cl.exe ${buildTypeParams} /nologo /EHs /GR /GF /W3 /EHsc /FS /c (/I[$${includePath}]) (/D\"$${defines}\") (/FI[$${forcedInclude}]) [${filePath}] /Fo[${outputDirectory}/${fileName}.o]';
 				bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "build/${buildTypeName}/${fileDirectory}", command: command });
-				command = 'link.exe ${linkTypeParams} [$${filePath}] /OUT:[build/${buildTypeName}/main.exe] /LIBPATH:[${env:ScopeCppSDK}/VC/lib] /LIBPATH:[${env:ScopeCppSDK}/SDK/lib]';
+				command = 'link.exe /NOLOGO ${linkTypeParams} [$${filePath}] /OUT:[build/${buildTypeName}/main.exe] /LIBPATH:[${env:ScopeCppSDK}/VC/lib] /LIBPATH:[${env:ScopeCppSDK}/SDK/lib]';
 				bSteps.push({ name: 'C++ Link Sample Step', fileList: 'build/${buildTypeName}/**/*.o', command: command });
 				problemMatchers.push('$msCompile');
 				break;

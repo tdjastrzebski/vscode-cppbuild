@@ -4,11 +4,16 @@
 
 # How to use it?
 1. Install command line [cppbuild](https://github.com/tdjastrzebski/cppbuild/) tool: `npm install cppbuild -g`
-1. Go to menu **Terminal** and choose **Run Task..** option.  
+1. Go to menu **Terminal** and choose **Run Task...** option.  
 You should see additional build tasks available.
 1. Modify created `c_cpp_build.json` file according to your needs.  
 Detailed `c_cpp_build.json` file description is available at [cppbuild](https://github.com/tdjastrzebski/cppbuild/) GitHub site.
-1. **Note**: `c_cpp_build.json` file must contain configurations named exactly as those defined in `c_cpp_properties.json` file.
+
+### Note
+1. `c_cpp_build.json` file must contain configurations named exactly as those defined in `c_cpp_properties.json` file.
+1. Sample entry for Microsoft C++ compiler uses `env:ScopeCppSDK` environment variable. E.g. `C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\SDK\ScopeCppSDK`
+1. Build can be run from command line as well. Example: `cppbuild GCC debug`  
+Use `cppbuild --help` for more options.
 
 # Why?
 While working on C/C++ for embedded devices in VS Code I wanted to simplify multi-step build process configuration and maintenance. Also, I wanted to eliminate setting duplication (include paths and defines) between `c_cpp_properties.json` and widely used MAKE/CMake files.  

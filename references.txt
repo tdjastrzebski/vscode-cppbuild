@@ -45,3 +45,6 @@ https://code.visualstudio.com/api/working-with-extensions/bundling-extension
 
 vsce package
 https://marketplace.visualstudio.com/manage/publishers/tdjastrzebski
+
+SVG -> PNG
+https://www.online-convert.com
