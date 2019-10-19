@@ -10,7 +10,7 @@ By default, build output files are placed in `./build` folder.
 1. Modify created `c_cpp_build.json` file according to your needs.  
 Detailed `c_cpp_build.json` file description is available at [cppbuild](https://github.com/tdjastrzebski/cppbuild/) GitHub site.
 
-### Note
+# Note
 1. `c_cpp_build.json` file must contain configurations named exactly as those defined in `c_cpp_properties.json` file.
 1. Sample entry for Microsoft C++ compiler uses `env:ScopeCppSDK` environment variable. E.g. `C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\SDK\ScopeCppSDK`
 1. Build can be run from command line as well. Example: `cppbuild GCC debug`  
