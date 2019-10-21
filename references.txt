@@ -32,6 +32,9 @@ https://docs.microsoft.com/en-us/cpp/build/reference/compiler-options?view=vs-20
 using visual studio 10 compiler
 http://forums.codeblocks.org/index.php?topic=19718.0
 
+LINK.exe
+https://docs.microsoft.com/en-us/cpp/build/reference/linking?view=vs-2019
+
 CLang
 http://releases.llvm.org/download.html
 https://clang.llvm.org/get_started.html

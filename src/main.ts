@@ -51,6 +51,7 @@ async function createInitialBuildFile(): Promise<boolean> {
 		const bSteps: cppt.BuildStep[] = [];
 		const bTypes: cppt.BuildType[] = [];
 		const problemMatchers: string[] = [];
+		let cParams: { [key: string]: string | string[] } | undefined;
 
 		switch (c.intelliSenseMode) {
 			case 'gcc-x64':
@@ -60,30 +61,31 @@ async function createInitialBuildFile(): Promise<boolean> {
 				bTypes.push({ name: 'debug', params: { buildTypeParams: '-O0 -g' } });
 				bTypes.push({ name: 'release', params: { buildTypeParams: '-O2 -g0' } });
 				command = cmd + ' -c -std=c++17 ${buildTypeParams} (-I[$${includePath}]) (-D$${defines}) (-include [$${forcedInclude}]) [${filePath}] -o [${outputDirectory}/${fileName}.o]';
-				bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "build/${buildTypeName}/${fileDirectory}", command: command });
-				command = cmd + ' [$${filePath}] -o [build/${buildTypeName}/main.exe]';
-				bSteps.push({ name: 'C++ Link Sample Step', fileList: 'build/${buildTypeName}/**/*.o', command: command });
+				bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
+				command = cmd + ' [$${filePath}] -o [${buildDir}/${buildTypeName}/main.exe]';
+				bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
 				problemMatchers.push('$gcc');
 				break;
 			case 'msvc-x64':
-				bSteps.push({ name: 'Test if \'ScopeCppSDK\' path variable is set.', command: 'cmd.exe /C \"echo %ScopeCppSDK%\"' });
-				bTypes.push({ name: 'debug', params: { buildTypeParams: '/MDd /Od /RTCsu /Zi /Fd[build/${buildTypeName}/main.pdb]', linkTypeParams: '/DEBUG' } });
+				bTypes.push({ name: 'debug', params: { buildTypeParams: '/MDd /Od /RTCsu /Zi /Fd[${buildDir}/${buildTypeName}/main.pdb]', linkTypeParams: '/DEBUG' } });
 				bTypes.push({ name: 'release', params: { buildTypeParams: '/MD /Ox', linkTypeParams: '' } });
 				command = 'cl.exe ${buildTypeParams} /nologo /EHs /GR /GF /W3 /EHsc /FS /c (/I[$${includePath}]) (/D\"$${defines}\") (/FI[$${forcedInclude}]) [${filePath}] /Fo[${outputDirectory}/${fileName}.o]';
-				bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "build/${buildTypeName}/${fileDirectory}", command: command });
-				command = 'link.exe /NOLOGO ${linkTypeParams} [$${filePath}] /OUT:[build/${buildTypeName}/main.exe] /LIBPATH:[${env:ScopeCppSDK}/VC/lib] /LIBPATH:[${env:ScopeCppSDK}/SDK/lib]';
-				bSteps.push({ name: 'C++ Link Sample Step', fileList: 'build/${buildTypeName}/**/*.o', command: command });
+				bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
+				command = 'link.exe /NOLOGO ${linkTypeParams} [$${filePath}] /OUT:[${buildDir}/${buildTypeName}/main.exe] /LIBPATH:[${ScopeCppSDK}/VC/lib] /LIBPATH:[${ScopeCppSDK}/SDK/lib]';
+				bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
 				problemMatchers.push('$msCompile');
+				cParams = {};
+				cParams["ScopeCppSDK"]= "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/SDK/ScopeCppSDK";
 				break;
 			default:
 				return;
 		}
-
-		const bConfig: cppt.BuildConfiguration = { name: c.name, buildTypes: bTypes, buildSteps: bSteps, problemMatchers: problemMatchers };
+		
+		const bConfig: cppt.BuildConfiguration = { name: c.name, params: cParams, buildTypes: bTypes, buildSteps: bSteps, problemMatchers: problemMatchers };
 		bConfigs.push(bConfig);
 	});
 
-	const bc: cppt.BuildConfigurations = { version: 1, configurations: bConfigs };
+	const bc: cppt.BuildConfigurations = { version: 1, params: { buildDir: "build" }, configurations: bConfigs };
 	const text = JSON.stringify(bc, null, '\t');
 
 	try {
@@ -144,7 +146,7 @@ function buildTask(rootFolder: vscode.WorkspaceFolder, cmd: string, configName: 
 	task.group = vscode.TaskGroup.Build; // this does not seem to work
 	task.source = cppt.ToolName;
 	// note: matcher needs to be specified, otherwise user has to select it from the list, task entry is created
-	// and extension stops working in debug - tasks list appears empty, probably VS Code bug
+	// and extension stops working in debug - tasks list appears empty, probably it is VS Code bug
 	task.problemMatchers = problemMatchers || []; // FIXME: this does not seem to work
 	return task;
 }
