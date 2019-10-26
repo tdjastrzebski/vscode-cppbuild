@@ -20,7 +20,7 @@ let _taskDetector: TaskDetector;
 let _channel: vscode.OutputChannel;
 
 export function activate(_context: vscode.ExtensionContext): void {
-
+	// TODO: add cppbuild version check
 	createInitialBuildFile().then((value) => {
 		_taskDetector = new TaskDetector(computeTasks);
 		_taskDetector.start();
@@ -39,51 +39,72 @@ async function createInitialBuildFile(): Promise<boolean> {
 	if (!rootPath) return false;
 	const buildStepsPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.BuildStepsFile);
 	if (await cppt.checkFileExists(buildStepsPath)) return false;
+	
 	const propertiesPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.PropertiesFile);
-	if (! await cppt.checkFileExists(propertiesPath)) return false;
-	const cppConfig: cppt.ConfigurationJson | undefined = cppt.getJsonObject(propertiesPath);
-	if (!cppConfig) return false;
+	let cppConfig: cppt.ConfigurationJson | undefined;
+
+	if (await cppt.checkFileExists(propertiesPath)) {
+		cppConfig = cppt.getJsonObject(propertiesPath);
+	}
+
 	const bConfigs: cppt.BuildConfiguration[] = [];
 
-	cppConfig.configurations.forEach(c => {
+	if (cppConfig) {
+		cppConfig.configurations.forEach(c => {
+			let command: string;
+			let cmd: string | undefined;
+			const bSteps: cppt.BuildStep[] = [];
+			const bTypes: cppt.BuildType[] = [];
+			const problemMatchers: string[] = [];
+			let cParams: { [key: string]: string | string[] } | undefined;
+
+			switch (c.intelliSenseMode) {
+				case 'gcc-x64':
+					cmd = 'g++';
+				case 'clang-x64':
+					cmd = cmd || 'clang++';
+					bTypes.push({ name: 'debug', params: { buildTypeParams: '-O0 -g' } });
+					bTypes.push({ name: 'release', params: { buildTypeParams: '-O2 -g0' } });
+					command = cmd + ' -c -std=c++17 ${buildTypeParams} (-I[$${includePath}]) (-D$${defines}) (-include [$${forcedInclude}]) [${filePath}] -o [${outputDirectory}/${fileName}.o]';
+					bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
+					command = cmd + ' [$${filePath}] -o [${buildDir}/${buildTypeName}/main.exe]';
+					bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
+					problemMatchers.push('$gcc');
+					break;
+				case 'msvc-x64':
+					bTypes.push({ name: 'debug', params: { buildTypeParams: '/MDd /Od /RTCsu /Zi /Fd[${buildDir}/${buildTypeName}/main.pdb]', linkTypeParams: '/DEBUG' } });
+					bTypes.push({ name: 'release', params: { buildTypeParams: '/MD /Ox', linkTypeParams: '' } });
+					command = 'cl.exe ${buildTypeParams} /nologo /EHs /GR /GF /W3 /EHsc /FS /c (/I[$${includePath}]) (/D\"$${defines}\") (/FI[$${forcedInclude}]) [${filePath}] /Fo[${outputDirectory}/${fileName}.o]';
+					bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
+					command = 'link.exe /NOLOGO ${linkTypeParams} [$${filePath}] /OUT:[${buildDir}/${buildTypeName}/main.exe] /LIBPATH:[${ScopeCppSDK}/VC/lib] /LIBPATH:[${ScopeCppSDK}/SDK/lib]';
+					bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
+					problemMatchers.push('$msCompile');
+					cParams = { ScopeCppSDK: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/SDK/ScopeCppSDK" };
+					break;
+				default:
+					return;
+			}
+			const bConfig: cppt.BuildConfiguration = { name: c.name, params: cParams, buildTypes: bTypes, buildSteps: bSteps, problemMatchers: problemMatchers };
+			bConfigs.push(bConfig);
+		});
+	} else {
 		let command: string;
-		let cmd: string | undefined;
 		const bSteps: cppt.BuildStep[] = [];
 		const bTypes: cppt.BuildType[] = [];
 		const problemMatchers: string[] = [];
 		let cParams: { [key: string]: string | string[] } | undefined;
 
-		switch (c.intelliSenseMode) {
-			case 'gcc-x64':
-				cmd = 'g++';
-			case 'clang-x64':
-				cmd = cmd || 'clang++';
-				bTypes.push({ name: 'debug', params: { buildTypeParams: '-O0 -g' } });
-				bTypes.push({ name: 'release', params: { buildTypeParams: '-O2 -g0' } });
-				command = cmd + ' -c -std=c++17 ${buildTypeParams} (-I[$${includePath}]) (-D$${defines}) (-include [$${forcedInclude}]) [${filePath}] -o [${outputDirectory}/${fileName}.o]';
-				bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
-				command = cmd + ' [$${filePath}] -o [${buildDir}/${buildTypeName}/main.exe]';
-				bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
-				problemMatchers.push('$gcc');
-				break;
-			case 'msvc-x64':
-				bTypes.push({ name: 'debug', params: { buildTypeParams: '/MDd /Od /RTCsu /Zi /Fd[${buildDir}/${buildTypeName}/main.pdb]', linkTypeParams: '/DEBUG' } });
-				bTypes.push({ name: 'release', params: { buildTypeParams: '/MD /Ox', linkTypeParams: '' } });
-				command = 'cl.exe ${buildTypeParams} /nologo /EHs /GR /GF /W3 /EHsc /FS /c (/I[$${includePath}]) (/D\"$${defines}\") (/FI[$${forcedInclude}]) [${filePath}] /Fo[${outputDirectory}/${fileName}.o]';
-				bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
-				command = 'link.exe /NOLOGO ${linkTypeParams} [$${filePath}] /OUT:[${buildDir}/${buildTypeName}/main.exe] /LIBPATH:[${ScopeCppSDK}/VC/lib] /LIBPATH:[${ScopeCppSDK}/SDK/lib]';
-				bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
-				problemMatchers.push('$msCompile');
-				cParams = {};
-				cParams["ScopeCppSDK"]= "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/SDK/ScopeCppSDK";
-				break;
-			default:
-				return;
-		}
-		
-		const bConfig: cppt.BuildConfiguration = { name: c.name, params: cParams, buildTypes: bTypes, buildSteps: bSteps, problemMatchers: problemMatchers };
+		bTypes.push({ name: 'debug', params: { buildTypeParams: '-O0 -g', defines: ["_DEBUG"] } });
+		bTypes.push({ name: 'release', params: { buildTypeParams: '-O2 -g0', defines:[] } });
+		command = 'g++ -c -std=c++17 ${buildTypeParams} (-D$${defines}) [${filePath}] -o [${outputDirectory}/${fileName}.o]';
+		bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
+		command = 'g++ [$${filePath}] -o [${buildDir}/${buildTypeName}/main.exe]';
+		bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
+
+		const bConfig: cppt.BuildConfiguration = { name: "GCC", params: cParams, buildTypes: bTypes, buildSteps: bSteps, problemMatchers: problemMatchers };
 		bConfigs.push(bConfig);
-	});
+		problemMatchers.push('$gcc');
+	}
 
 	const bc: cppt.BuildConfigurations = { version: 1, params: { buildDir: "build" }, configurations: bConfigs };
 	const text = JSON.stringify(bc, null, '\t');
@@ -93,6 +114,7 @@ async function createInitialBuildFile(): Promise<boolean> {
 	} catch (e) {
 		logError(`Error writing ${buildStepsPath} file.\n${e.message}`);
 	}
+
 	return true;
 }
 
@@ -101,12 +123,14 @@ async function computeTasks(workspaceFolder: vscode.WorkspaceFolder): Promise<vs
 	const tasks: vscode.Task[] = [];
 	if (!rootPath) return tasks;
 
-	const propertiesPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.PropertiesFile);
 	const buildStepsPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.BuildStepsFile);
+	let propertiesPath: string | undefined = path.join(rootPath, cppt.PropertiesFolder, cppt.PropertiesFile);
 	let infos: cppt.BuildInfo[];
+	
+	if (! await cppt.checkFileExists(propertiesPath)) propertiesPath = undefined;
 
 	try {
-		infos = await cppt.getBuildInfos(propertiesPath, buildStepsPath);
+		infos = await cppt.getBuildInfos(buildStepsPath, propertiesPath);
 	} catch (e) {
 		const error = e as Error;
 		if (error) logError(error.message);
@@ -122,11 +146,11 @@ async function computeTasks(workspaceFolder: vscode.WorkspaceFolder): Promise<vs
 		// for each config
 		if (i.buildTypes === undefined || i.buildTypes.length == 0) {
 			// no build types defined for config
-			const task = buildTask(workspaceFolder, toolCommand, i.name, i.problemMatchers);
+			const task = buildTask(workspaceFolder, toolCommand, i.name, buildStepsPath, propertiesPath, i.problemMatchers);
 			tasks.push(task);
 		} else {
 			i.buildTypes.forEach(buildType => {
-				const task = buildTask(workspaceFolder, toolCommand, i.name, i.problemMatchers, buildType);
+				const task = buildTask(workspaceFolder, toolCommand, i.name, buildStepsPath, propertiesPath, i.problemMatchers, buildType);
 				tasks.push(task);
 			});
 		}
@@ -135,10 +159,10 @@ async function computeTasks(workspaceFolder: vscode.WorkspaceFolder): Promise<vs
 	return tasks;
 }
 
-function buildTask(rootFolder: vscode.WorkspaceFolder, cmd: string, configName: string, problemMatchers?: string[], buildType?: string): vscode.Task {
+function buildTask(rootFolder: vscode.WorkspaceFolder, cmd: string, configName: string, buildStepsPath: string, propertiesPath?: string, problemMatchers?: string[], buildType?: string): vscode.Task {
 	const options: vscode.ShellExecutionOptions = { cwd: rootFolder.uri.fsPath };
 	const args: string[] = [];
-	cmd += ' "' + configName + '"' + (buildType ? ' "' + buildType + '"' : '');
+	cmd += ' "' + configName + '"' + (buildType ? ' "' + buildType + '"' : '') + (propertiesPath ? "" : " -p");
 	const execution = new vscode.ShellExecution(cmd, args, options);
 	const kind: TaskDefinition = { type: 'shell' };
 	const name = `${configName}${buildType ? ' - ' + buildType : ''}`;
