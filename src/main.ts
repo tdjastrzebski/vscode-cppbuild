@@ -12,18 +12,34 @@ import * as cppt from 'cppbuild';
 import { TaskDefinition } from 'vscode';
 import { TaskDetector } from './TaskDetector';
 import { findToolCommand } from './vscode';
+import * as cp from 'child_process';
+import compareVersions from 'compare-versions';
 
-export const ExtensionName: string = "CPP Tools Build";
+export const ExtensionName: string = "Build++";
 export const ToolName = cppt.ToolName;
 
 let _taskDetector: TaskDetector;
 let _channel: vscode.OutputChannel;
+let _cppBuildVersion: string | undefined;
+const MinCppBuildVersion = '1.1.3';
 
 export function activate(_context: vscode.ExtensionContext): void {
-	// TODO: add cppbuild version check
-	createInitialBuildFile().then((value) => {
-		_taskDetector = new TaskDetector(computeTasks);
-		_taskDetector.start();
+	getCppBuildVerion().then((value) => {
+		_cppBuildVersion = value;
+
+		if (!_cppBuildVersion) {
+			logError(`Install CppBuild: nmp install ${cppt.ToolName} -g`);
+			return;
+		} else {
+			if (compareVersions(_cppBuildVersion, MinCppBuildVersion) < 0) {
+				logError(`Update CppBuild: nmp update ${cppt.ToolName} -g`);
+			}
+		}
+	}).finally(() => {
+		createInitialBuildFile().then((value) => {
+			_taskDetector = new TaskDetector(computeTasks);
+			_taskDetector.start();
+		});
 	});
 }
 
@@ -39,7 +55,7 @@ async function createInitialBuildFile(): Promise<boolean> {
 	if (!rootPath) return false;
 	const buildStepsPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.BuildStepsFile);
 	if (await cppt.checkFileExists(buildStepsPath)) return false;
-	
+
 	const propertiesPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.PropertiesFile);
 	let cppConfig: cppt.ConfigurationJson | undefined;
 
@@ -95,7 +111,7 @@ async function createInitialBuildFile(): Promise<boolean> {
 		let cParams: { [key: string]: string | string[] } | undefined;
 
 		bTypes.push({ name: 'debug', params: { buildTypeParams: '-O0 -g', defines: ["_DEBUG"] } });
-		bTypes.push({ name: 'release', params: { buildTypeParams: '-O2 -g0', defines:[] } });
+		bTypes.push({ name: 'release', params: { buildTypeParams: '-O2 -g0', defines: [] } });
 		command = 'g++ -c -std=c++17 ${buildTypeParams} (-D$${defines}) [${filePath}] -o [${outputDirectory}/${fileName}.o]';
 		bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
 		command = 'g++ [$${filePath}] -o [${buildDir}/${buildTypeName}/main.exe]';
@@ -118,6 +134,34 @@ async function createInitialBuildFile(): Promise<boolean> {
 	return true;
 }
 
+async function getCppBuildVerion(): Promise<string | undefined> {
+	try {
+		const result = await execCmd("cppbuild --version", {});
+		if (result.error) return undefined;
+		return result.stdout;
+	} catch {
+		return undefined;
+	}
+}
+
+interface ExecCmdResult {
+	stdout: string;
+	stderr: string;
+	error?: cp.ExecException;
+}
+
+async function execCmd(command: string, options: cp.ExecOptions): Promise<ExecCmdResult> {
+	return new Promise<ExecCmdResult>((resolve, reject) => {
+		const proc: cp.ChildProcess = cp.exec(command, options, (error, stdout, stderr) => {
+			if (error) {
+				reject({ stdout, stderr, error });
+			} else {
+				resolve({ stdout, stderr });
+			}
+		});
+	});
+}
+
 async function computeTasks(workspaceFolder: vscode.WorkspaceFolder): Promise<vscode.Task[]> {
 	const rootPath = workspaceFolder.uri.scheme === 'file' ? workspaceFolder.uri.fsPath : undefined;
 	const tasks: vscode.Task[] = [];
@@ -126,7 +170,7 @@ async function computeTasks(workspaceFolder: vscode.WorkspaceFolder): Promise<vs
 	const buildStepsPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.BuildStepsFile);
 	let propertiesPath: string | undefined = path.join(rootPath, cppt.PropertiesFolder, cppt.PropertiesFile);
 	let infos: cppt.BuildInfo[];
-	
+
 	if (! await cppt.checkFileExists(propertiesPath)) propertiesPath = undefined;
 
 	try {
@@ -182,13 +226,13 @@ function logError(message: string) {
 
 function getOutputChannel(): vscode.OutputChannel {
 	if (!_channel) {
-		_channel = vscode.window.createOutputChannel('Build Auto Detection');
+		_channel = vscode.window.createOutputChannel(`${ExtensionName} tasks auto detection`);
 	}
 	return _channel;
 }
 
 function showError() {
-	vscode.window.showWarningMessage('Problem finding build tasks. See the output for more information.', 'Go to output').then(() => {
+	vscode.window.showWarningMessage(`${ExtensionName} problem detected`, 'Go to output').then(() => {
 		_channel.show(true);
 	});
 }
