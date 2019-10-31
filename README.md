@@ -1,5 +1,5 @@
 # What is it?
-**Build++** is **VS Code** multi-step build tool extension based on JSON, string templates and [glob syntax](https://en.wikipedia.org/wiki/Glob_(programming)).  
+**Build++** is **VS Code** multi-step incremental build tool extension based on JSON, string templates and [glob syntax](https://en.wikipedia.org/wiki/Glob_(programming)).  
 **Build++** can build C/C++ projects using [vscode-cpptools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) `includePath`, `defines` and `forcedInclude` variables combined with its own build steps but it is not limited to C/C++ builds.  
 **Build++** runs [CppBuild](https://github.com/tdjastrzebski/cppbuild/) command line utility using tasks it creates 'on the fly'.
 
@@ -29,6 +29,8 @@ Detailed `c_cpp_build.json` file description is available at [CppBuild](https://
 `[]` containing multi-valued variable is treated as sub-template as well.
 1. Other variables available: **workspaceRoot**/**workspaceFolder**, **workspaceRootFolderName**, **outputDirectory**, **buildTypeName**, **configName**, **includePath**, **defines** and **forcedInclude**. The last three are populated from `c_cpp_properties.json` file.
 1. Additional variables can be defined almost anywhere using `params` property. Variables defined on lower level take precedence.
+1. Variable values and **outputFile**/**outputDirectory** properties can contain other variables. Example: **outputFile**/**outputDirectory** variable can contain `${fileDirectory}`. As a result, inside the output **build** folder directory structure will resemble the input directory structure.
+1. Be default, if **outputFile** already exists and is more recent than the processed input file, build for this file will not be performed. As a result, only modified files will be built (incremental build).
 
 # Predefined variables
 The following variables have been predefined:
@@ -37,8 +39,9 @@ The following variables have been predefined:
 1. **buildTypeName** - selected build type name (optional)
 1. **filePath** (relative file path), **fileDirectory** (relative file directory), **fileName** (file name without extension), **fullFileName** (file name with extension), **fileExtension** (without .)  
 The above variables are available when **filePattern** or **fileList** build step property is defined. When **filePattern** is defined, variables have single values and `command` is executed for every file matching the specified pattern. When **fileList** is defined, variables have multiple values but build step `command` is executed just once.
-1. **outputDirectory** - output directory, optional if build step **outputDirectory** template specified
+1. **outputDirectory** - output directory, available when build step **outputDirectory** template is specified
 1. **includePath**, **defines** and **forcedInclude** - multi-valued variables populated from `c_cpp_properties.json` (if used)
+1. **outputFile** - available only when **filePattern** is specified.
 
 # Why?
 While working on C/C++ for embedded devices in VS Code I wanted to simplify multi-step build process configuration and maintenance. Also, I wanted to eliminate setting duplication (include paths and defines) between `c_cpp_properties.json` and widely used MAKE/CMake files.  
@@ -53,4 +56,8 @@ https://github.com/tdjastrzebski/vscode-cppbuild
 # Known issues
 1. Although created tasks are marked as Build tasks, they do not appear in **Build Tasks** group. I suspect VS Code bug.
 1. Occasionally output parts are not visible in Terminal window. The problem does not occur if **cppbuild** is run from the command prompt. The problem may be related to multi threading.
-1. Defined **problemMatchers** do not seem to work. I suspect VS Code problem.
+
+# Release notes
+* 1.0 Initial release
+* 1.1 `params` can be added on all levels, tool can work without C/C++ extension and `c_cpp_properties.json` file.
+* 1.2 Added support for incremental builds and `outputFile` build step property.

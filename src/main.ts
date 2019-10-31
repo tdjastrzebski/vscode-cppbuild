@@ -12,27 +12,25 @@ import * as cppt from 'cppbuild';
 import { TaskDefinition } from 'vscode';
 import { TaskDetector } from './TaskDetector';
 import { findToolCommand } from './vscode';
-import * as cp from 'child_process';
-import compareVersions from 'compare-versions';
+import * as semver from 'semver';
 
-export const ExtensionName: string = "Build++";
-export const ToolName = cppt.ToolName;
+const ExtensionName: string = "Build++";
+const MinCppBuildVersion = '1.2.0';
 
 let _taskDetector: TaskDetector;
 let _channel: vscode.OutputChannel;
 let _cppBuildVersion: string | undefined;
-const MinCppBuildVersion = '1.1.3';
 
 export function activate(_context: vscode.ExtensionContext): void {
-	getCppBuildVerion().then((value) => {
+	getCppBuildVersion().then((value) => {
 		_cppBuildVersion = value;
 
 		if (!_cppBuildVersion) {
 			logError(`Install CppBuild: nmp install ${cppt.ToolName} -g`);
 			return;
 		} else {
-			if (compareVersions(_cppBuildVersion, MinCppBuildVersion) < 0) {
-				logError(`Update CppBuild: nmp update ${cppt.ToolName} -g`);
+			if (semver.gt(MinCppBuildVersion, _cppBuildVersion)) {
+				logError(`The minimum version of ${cppt.ToolName} is ${MinCppBuildVersion} and you have ${_cppBuildVersion}.\nUpdate it now: npm install -g ${cppt.ToolName}`);
 			}
 		}
 	}).finally(() => {
@@ -47,9 +45,28 @@ export function deactivate(): void {
 	_taskDetector.dispose();
 }
 
+function logError(message: string) {
+	getOutputChannel().appendLine(message);
+	showError();
+}
+
+function getOutputChannel(): vscode.OutputChannel {
+	if (!_channel) {
+		_channel = vscode.window.createOutputChannel(`${ExtensionName} messages`);
+	}
+	return _channel;
+}
+
+function showError() {
+	vscode.window.showErrorMessage(`${ExtensionName} problem detected`, 'Go to output for details').then(() => {
+		_channel.show(true);
+	});
+}
+
 async function createInitialBuildFile(): Promise<boolean> {
 	const folders = vscode.workspace.workspaceFolders;
-	const rootFolder = folders![0];
+	if (!folders) return false;
+	const rootFolder = folders[0];
 	if (!rootFolder) return false;
 	const rootPath = rootFolder.uri.scheme === 'file' ? rootFolder.uri.fsPath : undefined;
 	if (!rootPath) return false;
@@ -81,8 +98,8 @@ async function createInitialBuildFile(): Promise<boolean> {
 					cmd = cmd || 'clang++';
 					bTypes.push({ name: 'debug', params: { buildTypeParams: '-O0 -g' } });
 					bTypes.push({ name: 'release', params: { buildTypeParams: '-O2 -g0' } });
-					command = cmd + ' -c -std=c++17 ${buildTypeParams} (-I[$${includePath}]) (-D$${defines}) (-include [$${forcedInclude}]) [${filePath}] -o [${outputDirectory}/${fileName}.o]';
-					bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
+					command = cmd + ' -c -std=c++17 ${buildTypeParams} (-I[$${includePath}]) (-D$${defines}) (-include [$${forcedInclude}]) [${filePath}] -o [${outputFile}]';
+					bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputFile: "${buildDir}/${buildTypeName}/${fileDirectory}/${fileName}.o", command: command });
 					command = cmd + ' [$${filePath}] -o [${buildDir}/${buildTypeName}/main.exe]';
 					bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
 					problemMatchers.push('$gcc');
@@ -90,8 +107,8 @@ async function createInitialBuildFile(): Promise<boolean> {
 				case 'msvc-x64':
 					bTypes.push({ name: 'debug', params: { buildTypeParams: '/MDd /Od /RTCsu /Zi /Fd[${buildDir}/${buildTypeName}/main.pdb]', linkTypeParams: '/DEBUG' } });
 					bTypes.push({ name: 'release', params: { buildTypeParams: '/MD /Ox', linkTypeParams: '' } });
-					command = 'cl.exe ${buildTypeParams} /nologo /EHs /GR /GF /W3 /EHsc /FS /c (/I[$${includePath}]) (/D\"$${defines}\") (/FI[$${forcedInclude}]) [${filePath}] /Fo[${outputDirectory}/${fileName}.o]';
-					bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
+					command = 'cl.exe ${buildTypeParams} /nologo /EHs /GR /GF /W3 /EHsc /FS /c (/I[$${includePath}]) (/D\"$${defines}\") (/FI[$${forcedInclude}]) [${filePath}] /Fo[${outputFile}]';
+					bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputFile: "${buildDir}/${buildTypeName}/${fileDirectory}/${fileName}.o", command: command });
 					command = 'link.exe /NOLOGO ${linkTypeParams} [$${filePath}] /OUT:[${buildDir}/${buildTypeName}/main.exe] /LIBPATH:[${ScopeCppSDK}/VC/lib] /LIBPATH:[${ScopeCppSDK}/SDK/lib]';
 					bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
 					problemMatchers.push('$msCompile');
@@ -112,8 +129,8 @@ async function createInitialBuildFile(): Promise<boolean> {
 
 		bTypes.push({ name: 'debug', params: { buildTypeParams: '-O0 -g', defines: ["_DEBUG"] } });
 		bTypes.push({ name: 'release', params: { buildTypeParams: '-O2 -g0', defines: [] } });
-		command = 'g++ -c -std=c++17 ${buildTypeParams} (-D$${defines}) [${filePath}] -o [${outputDirectory}/${fileName}.o]';
-		bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputDirectory: "${buildDir}/${buildTypeName}/${fileDirectory}", command: command });
+		command = 'g++ -c -std=c++17 ${buildTypeParams} (-D$${defines}) [${filePath}] -o [${outputFile}]';
+		bSteps.push({ name: 'C++ Compile Sample Step', filePattern: '**/*.cpp', outputFile: "${buildDir}/${buildTypeName}/${fileDirectory}/${fileName}.o", command: command });
 		command = 'g++ [$${filePath}] -o [${buildDir}/${buildTypeName}/main.exe]';
 		bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
 
@@ -122,7 +139,7 @@ async function createInitialBuildFile(): Promise<boolean> {
 		problemMatchers.push('$gcc');
 	}
 
-	const bc: cppt.BuildConfigurations = { version: 1, params: { buildDir: "build" }, configurations: bConfigs };
+	const bc: cppt.BuildConfigurations = { version: 1, params: { buildDir: "build/${configName}" }, configurations: bConfigs };
 	const text = JSON.stringify(bc, null, '\t');
 
 	try {
@@ -134,32 +151,14 @@ async function createInitialBuildFile(): Promise<boolean> {
 	return true;
 }
 
-async function getCppBuildVerion(): Promise<string | undefined> {
+async function getCppBuildVersion(): Promise<string | undefined> {
 	try {
-		const result = await execCmd("cppbuild --version", {});
+		const result = await cppt.execCmd(`${cppt.ToolName} --version`, {});
 		if (result.error) return undefined;
-		return result.stdout;
+		return result.stdout.split(/[\r\n]/).filter(line => !!line)[0];
 	} catch {
 		return undefined;
 	}
-}
-
-interface ExecCmdResult {
-	stdout: string;
-	stderr: string;
-	error?: cp.ExecException;
-}
-
-async function execCmd(command: string, options: cp.ExecOptions): Promise<ExecCmdResult> {
-	return new Promise<ExecCmdResult>((resolve, reject) => {
-		const proc: cp.ChildProcess = cp.exec(command, options, (error, stdout, stderr) => {
-			if (error) {
-				reject({ stdout, stderr, error });
-			} else {
-				resolve({ stdout, stderr });
-			}
-		});
-	});
 }
 
 async function computeTasks(workspaceFolder: vscode.WorkspaceFolder): Promise<vscode.Task[]> {
@@ -210,29 +209,11 @@ function buildTask(rootFolder: vscode.WorkspaceFolder, cmd: string, configName: 
 	const execution = new vscode.ShellExecution(cmd, args, options);
 	const kind: TaskDefinition = { type: 'shell' };
 	const name = `${configName}${buildType ? ' - ' + buildType : ''}`;
-	const task = new vscode.Task(kind, rootFolder, name, ToolName, execution);
+	const task = new vscode.Task(kind, rootFolder, name, cppt.ToolName, execution);
 	task.group = vscode.TaskGroup.Build; // this does not seem to work
 	task.source = cppt.ToolName;
 	// note: matcher needs to be specified, otherwise user has to select it from the list, task entry is created
 	// and extension stops working in debug - tasks list appears empty, probably it is VS Code bug
 	task.problemMatchers = problemMatchers || []; // FIXME: this does not seem to work
 	return task;
-}
-
-function logError(message: string) {
-	getOutputChannel().appendLine(message);
-	showError();
-}
-
-function getOutputChannel(): vscode.OutputChannel {
-	if (!_channel) {
-		_channel = vscode.window.createOutputChannel(`${ExtensionName} tasks auto detection`);
-	}
-	return _channel;
-}
-
-function showError() {
-	vscode.window.showWarningMessage(`${ExtensionName} problem detected`, 'Go to output').then(() => {
-		_channel.show(true);
-	});
 }
