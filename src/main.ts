@@ -15,7 +15,7 @@ import { findToolCommand } from './vscode';
 import * as semver from 'semver';
 
 const ExtensionName: string = "Build++";
-const MinToolVersion = '1.2.0';
+const MinToolVersion = '1.2.3';
 
 let _taskDetector: TaskDetector;
 let _channel: vscode.OutputChannel;
@@ -95,7 +95,7 @@ function getVscodeFolderPath(rootFolder: vscode.WorkspaceFolder): string | undef
 	if (!rootFolder) return undefined;
 	const rootPath = rootFolder.uri.scheme === 'file' ? rootFolder.uri.fsPath : undefined;
 	if (!rootPath) return undefined;
-	const vscodeFolderPath = path.join(rootPath, cppt.PropertiesFolder);
+	const vscodeFolderPath = path.join(rootPath, cppt.VscodeFolder);
 	return vscodeFolderPath;
 }
 

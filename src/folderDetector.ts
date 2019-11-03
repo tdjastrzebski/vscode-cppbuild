@@ -54,7 +54,7 @@ export class FolderDetector {
 	}
 
 	public start(): void {
-		let pattern = path.join(this._workspaceFolder.uri.fsPath, cppt.PropertiesFolder, `{${cppt.PropertiesFile},${cppt.BuildStepsFile}}`);
+		let pattern = path.join(this._workspaceFolder.uri.fsPath, cppt.VscodeFolder, `{${cppt.PropertiesFile},${cppt.BuildStepsFile}}`);
 		this.fileWatcher = vscode.workspace.createFileSystemWatcher(pattern);
 		this.fileWatcher.onDidChange(() => this.promise = undefined);
 		this.fileWatcher.onDidCreate(() => this.promise = undefined);
