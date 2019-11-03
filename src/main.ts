@@ -15,34 +15,95 @@ import { findToolCommand } from './vscode';
 import * as semver from 'semver';
 
 const ExtensionName: string = "Build++";
-const MinCppBuildVersion = '1.2.0';
+const MinToolVersion = '1.2.0';
 
 let _taskDetector: TaskDetector;
 let _channel: vscode.OutputChannel;
 let _cppBuildVersion: string | undefined;
 
 export function activate(_context: vscode.ExtensionContext): void {
-	getCppBuildVersion().then((value) => {
-		_cppBuildVersion = value;
+	const folders = vscode.workspace.workspaceFolders;
+	if (!folders) return;
+	const rootFolder = folders[0];
+	if (!rootFolder) return;
+	if (rootFolder.uri.scheme !== 'file') return;
+
+	if (!isEnabled(rootFolder)) return;
+
+	(async () => {
+		_cppBuildVersion = await getToolVersion();
 
 		if (!_cppBuildVersion) {
-			logError(`Install CppBuild: nmp install ${cppt.ToolName} -g`);
-			return;
-		} else {
-			if (semver.gt(MinCppBuildVersion, _cppBuildVersion)) {
-				logError(`The minimum version of ${cppt.ToolName} is ${MinCppBuildVersion} and you have ${_cppBuildVersion}.\nUpdate it now: npm install -g ${cppt.ToolName}`);
+			logError(`Install CppBuild: npm install ${cppt.ToolName} -g`);
+		} else if (semver.gt(MinToolVersion, _cppBuildVersion)) {
+			logError(`The minimum version of ${cppt.ToolName} is ${MinToolVersion} and you have ${_cppBuildVersion}.\nUpdate it now: npm install ${cppt.ToolName} -g`);
+		}
+
+		const buildStepsPath = getBuildStepsPath(rootFolder);
+		if (!buildStepsPath) return;
+
+		if (!await cppt.checkFileExists(buildStepsPath)) {
+			// build file does not exits yet
+			let value = await showDialog(rootFolder);
+
+			if (value === true) {
+				// create build file
+				const commands = await vscode.commands.getCommands(true);
+
+				if (commands.indexOf("workbench.action.problems.focus") >= 0) {
+					vscode.commands.executeCommand("workbench.action.problems.focus");
+				}
+
+				if (await createInitialBuildFile(rootFolder)) {
+					const document = await vscode.workspace.openTextDocument(vscode.Uri.file(buildStepsPath));
+					vscode.window.showTextDocument(document);
+				}
+			} else if (value === false) {
+				// disable this extension
+				await setEnabled(rootFolder, false);
+				return; // do not activate
 			}
 		}
-	}).finally(() => {
-		createInitialBuildFile().then((value) => {
-			_taskDetector = new TaskDetector(computeTasks);
-			_taskDetector.start();
-		});
-	});
+
+		_taskDetector = new TaskDetector(computeTasks);
+		_taskDetector.start();
+	})();
 }
 
 export function deactivate(): void {
-	_taskDetector.dispose();
+	if (_taskDetector) _taskDetector.dispose();
+}
+
+async function showDialog(rootFolder: vscode.WorkspaceFolder): Promise<boolean | undefined> {
+	const fallbackMsg = 'Configure your Build++ steps';
+	const configJSON: string = 'Configure (JSON)';
+	//const configUI: string = 'Configure (UI)';
+	const dontShowAgain: string = "Don't Show Again";
+	const value = await vscode.window.showInformationMessage(fallbackMsg, configJSON, dontShowAgain);
+
+	switch (value) {
+		case configJSON:
+			return true;
+		case dontShowAgain:
+			return false;
+		default:
+			return undefined;
+	}
+}
+
+function getVscodeFolderPath(rootFolder: vscode.WorkspaceFolder): string | undefined {
+	if (!rootFolder) return undefined;
+	const rootPath = rootFolder.uri.scheme === 'file' ? rootFolder.uri.fsPath : undefined;
+	if (!rootPath) return undefined;
+	const vscodeFolderPath = path.join(rootPath, cppt.PropertiesFolder);
+	return vscodeFolderPath;
+}
+
+function getBuildStepsPath(rootFolder: vscode.WorkspaceFolder): string | undefined {
+	const vscodeFolderPath = getVscodeFolderPath(rootFolder);
+	if (!vscodeFolderPath) return undefined;
+	const buildStepsPath: string = path.join(vscodeFolderPath, cppt.BuildStepsFile);
+	return buildStepsPath;
 }
 
 function logError(message: string) {
@@ -63,17 +124,14 @@ function showError() {
 	});
 }
 
-async function createInitialBuildFile(): Promise<boolean> {
-	const folders = vscode.workspace.workspaceFolders;
-	if (!folders) return false;
-	const rootFolder = folders[0];
-	if (!rootFolder) return false;
-	const rootPath = rootFolder.uri.scheme === 'file' ? rootFolder.uri.fsPath : undefined;
-	if (!rootPath) return false;
-	const buildStepsPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.BuildStepsFile);
+async function createInitialBuildFile(rootFolder: vscode.WorkspaceFolder): Promise<boolean> {
+	const vscodeFolderPath = getVscodeFolderPath(rootFolder);
+	if (!vscodeFolderPath) return false;
+	const buildStepsPath = getBuildStepsPath(rootFolder);
+	if (!buildStepsPath) return false;
 	if (await cppt.checkFileExists(buildStepsPath)) return false;
 
-	const propertiesPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.PropertiesFile);
+	const propertiesPath: string = path.join(vscodeFolderPath, cppt.PropertiesFile);
 	let cppConfig: cppt.ConfigurationJson | undefined;
 
 	if (await cppt.checkFileExists(propertiesPath)) {
@@ -134,7 +192,7 @@ async function createInitialBuildFile(): Promise<boolean> {
 		command = 'g++ [$${filePath}] -o [${buildDir}/${buildTypeName}/main.exe]';
 		bSteps.push({ name: 'C++ Link Sample Step', fileList: '${buildDir}/${buildTypeName}/**/*.o', command: command });
 
-		const bConfig: cppt.BuildConfiguration = { name: "GCC", params: cParams, buildTypes: bTypes, buildSteps: bSteps, problemMatchers: problemMatchers };
+		const bConfig: cppt.BuildConfiguration = { name: "gcc", params: cParams, buildTypes: bTypes, buildSteps: bSteps, problemMatchers: problemMatchers };
 		bConfigs.push(bConfig);
 		problemMatchers.push('$gcc');
 	}
@@ -142,16 +200,26 @@ async function createInitialBuildFile(): Promise<boolean> {
 	const bc: cppt.BuildConfigurations = { version: 1, params: { buildDir: "build/${configName}" }, configurations: bConfigs };
 	const text = JSON.stringify(bc, null, '\t');
 
+	if (!await cppt.checkDirectoryExists(vscodeFolderPath)) {
+		try {
+			await makeDirectory(vscodeFolderPath, { recursive: true });
+		} catch (e) {
+			logError(`Error creating ${vscodeFolderPath} folder.\n${e.message}`);
+			return false;
+		}
+	}
+
 	try {
 		fs.writeFileSync(buildStepsPath, text);
 	} catch (e) {
 		logError(`Error writing ${buildStepsPath} file.\n${e.message}`);
+		return false;
 	}
 
 	return true;
 }
 
-async function getCppBuildVersion(): Promise<string | undefined> {
+async function getToolVersion(): Promise<string | undefined> {
 	try {
 		const result = await cppt.execCmd(`${cppt.ToolName} --version`, {});
 		if (result.error) return undefined;
@@ -161,13 +229,41 @@ async function getCppBuildVersion(): Promise<string | undefined> {
 	}
 }
 
+async function makeDirectory(dirPath: string, options: fs.MakeDirectoryOptions): Promise<void> {
+	return new Promise((resolve, reject) => {
+		fs.mkdir(dirPath, options, err => {
+			if (err) {
+				reject(err);
+			}
+			else {
+				resolve();
+			}
+		});
+	});
+}
+
+//type Enabled = 'true' | 'false';
+
+function isEnabled(rootFolder: vscode.WorkspaceFolder): boolean {
+	// https://code.visualstudio.com/api/references/vscode-api
+	let result = vscode.workspace.getConfiguration(cppt.ToolName, rootFolder.uri).get<boolean>('isEnabled', true) === true;
+	return result;
+}
+
+async function setEnabled(rootFolder: vscode.WorkspaceFolder, value: boolean) {
+	// https://code.visualstudio.com/api/references/vscode-api
+	await vscode.workspace.getConfiguration(cppt.ToolName, rootFolder.uri).update('isEnabled', value, false);
+}
+
 async function computeTasks(workspaceFolder: vscode.WorkspaceFolder): Promise<vscode.Task[]> {
 	const rootPath = workspaceFolder.uri.scheme === 'file' ? workspaceFolder.uri.fsPath : undefined;
 	const tasks: vscode.Task[] = [];
 	if (!rootPath) return tasks;
-
-	const buildStepsPath: string = path.join(rootPath, cppt.PropertiesFolder, cppt.BuildStepsFile);
-	let propertiesPath: string | undefined = path.join(rootPath, cppt.PropertiesFolder, cppt.PropertiesFile);
+	const buildStepsPath = getBuildStepsPath(workspaceFolder);
+	if (!buildStepsPath) return tasks;
+	const vscodeFolderPath = getVscodeFolderPath(workspaceFolder);
+	if (!vscodeFolderPath) return tasks;
+	let propertiesPath: string | undefined = path.join(vscodeFolderPath, cppt.PropertiesFile);
 	let infos: cppt.BuildInfo[];
 
 	if (! await cppt.checkFileExists(propertiesPath)) propertiesPath = undefined;
@@ -205,7 +301,7 @@ async function computeTasks(workspaceFolder: vscode.WorkspaceFolder): Promise<vs
 function buildTask(rootFolder: vscode.WorkspaceFolder, cmd: string, configName: string, buildStepsPath: string, propertiesPath?: string, problemMatchers?: string[], buildType?: string): vscode.Task {
 	const options: vscode.ShellExecutionOptions = { cwd: rootFolder.uri.fsPath };
 	const args: string[] = [];
-	cmd += ' "' + configName + '"' + (buildType ? ' "' + buildType + '"' : '') + (propertiesPath ? "" : " -p");
+	cmd += ` "${configName}" ${buildType ? `"${buildType}"` : ''} -w "${rootFolder.uri.fsPath}" ${propertiesPath ? "" : "-p"}`;
 	const execution = new vscode.ShellExecution(cmd, args, options);
 	const kind: TaskDefinition = { type: 'shell' };
 	const name = `${configName}${buildType ? ' - ' + buildType : ''}`;

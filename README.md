@@ -1,14 +1,16 @@
 # What is it?
 **Build++** is **VS Code** multi-step incremental build tool extension based on JSON, string templates and [glob syntax](https://en.wikipedia.org/wiki/Glob_(programming)).  
-**Build++** can build C/C++ projects using [vscode-cpptools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) `includePath`, `defines` and `forcedInclude` variables combined with its own build steps but it is not limited to C/C++ builds.  
+**Build++** can build C/C++ projects using [vscode-cpptools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) `includePath`, `defines` and `forcedInclude` variables combined with its own build steps but it is not limited to C/C++ builds.   
 **Build++** runs [CppBuild](https://github.com/tdjastrzebski/cppbuild/) command line utility using tasks it creates 'on the fly'.
 
 # How to use it?
 1. Install command line [CppBuild](https://github.com/tdjastrzebski/cppbuild/) tool: `npm install cppbuild -g`
+1. Modify created `c_cpp_build.json` file according to your needs.  
+By default, build output files are placed in `./build` folder.
 1. Go to menu **Terminal** and choose **Run Task...** option.  
 You should see additional build tasks available.  
-By default, build output files are placed in `./build` folder.
-1. Modify created `c_cpp_build.json` file according to your needs.  
+1. Build can be run from terminal window as well: `cppbuild <config name> [build type] -w`
+
 Detailed `c_cpp_build.json` file description is available at [CppBuild](https://github.com/tdjastrzebski/cppbuild/) GitHub site.
 
 # Notes

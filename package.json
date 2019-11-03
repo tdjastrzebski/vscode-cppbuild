@@ -2,7 +2,7 @@
 	"name": "vscode-cppbuild",
 	"displayName": "Build++",
 	"description": "Multi-step build tool for VS Code C/C++ extension",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"preview": true,
 	"icon": "icon.png",
 	"publisher": "tdjastrzebski",
@@ -39,10 +39,18 @@
 		],
 		"jsonValidation": [
 			{
-				"fileMatch": "c_cpp_build.json",
+				"fileMatch": "*build.json",
 				"url": "./node_modules/cppbuild/c_cpp_build.schema.json"
 			}
-		]
+		],
+		"configuration": {
+			"properties": {
+				"cppbuild.isEnabled": {
+					"type": "boolean",
+					"default": true
+				}
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
