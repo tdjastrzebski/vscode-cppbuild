@@ -15,11 +15,13 @@ import { findToolCommand } from './vscode';
 import * as semver from 'semver';
 
 const ExtensionName: string = "Build++";
-const MinToolVersion = '1.2.3';
-
+const MinToolVersion = '1.2.8';
+const MinNodeVersion = '10.0.0';
 let _taskDetector: TaskDetector;
 let _channel: vscode.OutputChannel;
-let _cppBuildVersion: string | undefined;
+
+// TODO: test out: vscode.commands.executeCommand('cpptools.activeConfigName')
+// and output build tasks relevant to the current config only
 
 export function activate(_context: vscode.ExtensionContext): void {
 	const folders = vscode.workspace.workspaceFolders;
@@ -31,12 +33,20 @@ export function activate(_context: vscode.ExtensionContext): void {
 	if (!isEnabled(rootFolder)) return;
 
 	(async () => {
-		_cppBuildVersion = await getToolVersion();
+		const nodeVersion = await getToolVersion('node');
 
-		if (!_cppBuildVersion) {
-			logError(`Install CppBuild: npm install ${cppt.ToolName} -g`);
-		} else if (semver.gt(MinToolVersion, _cppBuildVersion)) {
-			logError(`The minimum version of ${cppt.ToolName} is ${MinToolVersion} and you have ${_cppBuildVersion}.\nUpdate it now: npm install ${cppt.ToolName} -g`);
+		if (!nodeVersion) {
+			logError(`Install node.js version ${MinNodeVersion} or newer.`);
+		} else if (semver.gt(MinNodeVersion, nodeVersion)) {
+			logError(`Update node.js to version ${MinNodeVersion} or newer.`);
+		} else {
+			const cppbuildVersion = await getToolVersion(cppt.ToolName);
+
+			if (!cppbuildVersion) {
+				logError(`Install CppBuild: npm install ${cppt.ToolName} -g`);
+			} else if (semver.gt(MinToolVersion, cppbuildVersion)) {
+				logError(`The minimum version of ${cppt.ToolName} is ${MinToolVersion} and you have ${cppbuildVersion}.\nUpdate it now: npm install ${cppt.ToolName} -g`);
+			}
 		}
 
 		const buildStepsPath = getBuildStepsPath(rootFolder);
@@ -202,7 +212,7 @@ async function createInitialBuildFile(rootFolder: vscode.WorkspaceFolder): Promi
 
 	if (!await cppt.checkDirectoryExists(vscodeFolderPath)) {
 		try {
-			await makeDirectory(vscodeFolderPath, { recursive: true });
+			await cppt.makeDirectory(vscodeFolderPath, { recursive: true });
 		} catch (e) {
 			logError(`Error creating ${vscodeFolderPath} folder.\n${e.message}`);
 			return false;
@@ -219,30 +229,17 @@ async function createInitialBuildFile(rootFolder: vscode.WorkspaceFolder): Promi
 	return true;
 }
 
-async function getToolVersion(): Promise<string | undefined> {
+async function getToolVersion(toolName: string): Promise<string | undefined> {
 	try {
-		const result = await cppt.execCmd(`${cppt.ToolName} --version`, {});
+		const result = await cppt.execCmd(`${toolName} --version`, {});
 		if (result.error) return undefined;
-		return result.stdout.split(/[\r\n]/).filter(line => !!line)[0];
+		let version = result.stdout.split(/[\r\n]/).filter(line => !!line)[0];
+		if (version.substr(0, 1) == 'v') version = version.substr(1);
+		return version;
 	} catch {
 		return undefined;
 	}
 }
-
-async function makeDirectory(dirPath: string, options: fs.MakeDirectoryOptions): Promise<void> {
-	return new Promise((resolve, reject) => {
-		fs.mkdir(dirPath, options, err => {
-			if (err) {
-				reject(err);
-			}
-			else {
-				resolve();
-			}
-		});
-	});
-}
-
-//type Enabled = 'true' | 'false';
 
 function isEnabled(rootFolder: vscode.WorkspaceFolder): boolean {
 	// https://code.visualstudio.com/api/references/vscode-api

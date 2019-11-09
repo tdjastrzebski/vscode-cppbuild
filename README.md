@@ -6,10 +6,10 @@
 # How to use it?
 1. Install command line [CppBuild](https://github.com/tdjastrzebski/cppbuild/) tool: `npm install cppbuild -g`
 1. Modify created `c_cpp_build.json` file according to your needs.  
-By default, build output files are placed in `./build` folder.
 1. Go to menu **Terminal** and choose **Run Task...** option.  
 You should see additional build tasks available.  
-1. Build can be run from terminal window as well: `cppbuild <config name> [build type] -w`
+1. Build can be run from terminal window as well: `cppbuild <config name> [build type] -w`  
+`-w` switch tells **cppbuild** to use current VS Code workspace.
 
 Detailed `c_cpp_build.json` file description is available at [CppBuild](https://github.com/tdjastrzebski/cppbuild/) GitHub site.
 
