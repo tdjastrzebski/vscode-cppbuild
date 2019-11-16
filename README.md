@@ -1,6 +1,6 @@
 # What is it?
 **Build++** is **VS Code** multi-step incremental build tool extension based on JSON, string templates and [glob syntax](https://en.wikipedia.org/wiki/Glob_(programming)).  
-**Build++** can build C/C++ projects using [vscode-cpptools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) `includePath`, `defines` and `forcedInclude` variables combined with its own build steps but it is not limited to C/C++ builds.   
+**Build++** can build C/C++ projects using [vscode-cpptools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools) `includePath`, `defines` and `forcedInclude` variables combined with its own build steps but it is not limited to C/C++ builds.  
 **Build++** runs [CppBuild](https://github.com/tdjastrzebski/cppbuild/) command line utility using tasks it creates 'on the fly'.
 
 # How to use it?
@@ -20,7 +20,7 @@ Detailed `c_cpp_build.json` file description is available at [CppBuild](https://
 1. [CppBuild](https://github.com/tdjastrzebski/cppbuild/) is not limited to C/C++ builds and can be run without `c_cpp_properties.json` file. Use `-p` option with no file name, which requires [CppBuild](https://github.com/tdjastrzebski/cppbuild/) version 1.1.0 or later.
 1. For more options use `cppbuild --help`.
 
-# Syntax
+# Build file syntax
 1. Build step `command` is repeated for every file matching **filePattern** - if **filePattern** is specified.  
 `${fileDirectory}`, `${filePath}` and `${fileName}` variables can be used in command.
 1. In contrast, **fileList** defines `$${fileDirectory}`, `$${filePath}` and `$${fileName}` multi-valued variables, `command` is not repeated. 

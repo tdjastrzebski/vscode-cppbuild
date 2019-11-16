@@ -1,8 +1,8 @@
 {
 	"name": "vscode-cppbuild",
 	"displayName": "Build++",
-	"description": "Multi-step build tool for VS Code C/C++ extension",
-	"version": "1.2.8",
+	"description": "Multi-step incremental build tool, optimized for C/C++",
+	"version": "1.2.9",
 	"preview": true,
 	"icon": "icon.png",
 	"publisher": "tdjastrzebski",

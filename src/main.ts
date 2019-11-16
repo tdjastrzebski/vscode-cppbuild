@@ -9,10 +9,10 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import * as cppt from 'cppbuild';
+import * as semver from 'semver';
 import { TaskDefinition } from 'vscode';
 import { TaskDetector } from './TaskDetector';
 import { findToolCommand } from './vscode';
-import * as semver from 'semver';
 
 const ExtensionName: string = "Build++";
 const MinToolVersion = '1.2.8';
