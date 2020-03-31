@@ -8,7 +8,8 @@
 1. Modify created `c_cpp_build.json` file according to your needs.  
 1. Go to menu **Terminal** and choose **Run Task...** option.  
 You should see additional build tasks available.  
-1. Build can be run from terminal window as well: `cppbuild <config name> [build type] -w`  
+1. Build can be run from terminal window as well:  
+`cppbuild <config name> [build type] -w`  
 `-w` switch tells **cppbuild** to use current VS Code workspace.
 1. Run `cppbuild --help` for more options.
 

@@ -14,7 +14,7 @@ import { TaskDetector } from './TaskDetector';
 import { findToolCommand } from './vscode';
 
 const ExtensionName: string = "Build++";
-const MinToolVersion = '1.3.11';
+const MinToolVersion = '1.3.12';
 const MinNodeVersion = '10.0.0';
 let _taskDetector: TaskDetector;
 let _channel: vscode.OutputChannel;
