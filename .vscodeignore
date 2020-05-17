@@ -8,5 +8,8 @@ src/**
 tsconfig.json
 *.txt
 *.vsdx
+*.md
 *.svg
 !LICENSE.txt
+!README.md
+!LICENSE

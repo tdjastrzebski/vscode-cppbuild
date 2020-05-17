@@ -10,7 +10,8 @@
 You should see additional build tasks available.  
 1. Build can be run from terminal window as well:  
 `cppbuild <config name> [build type] -w`  
-`-w` switch tells **cppbuild** to use current VS Code workspace.
+e.g. `cppbuild gcc debug -w`  
+`-w` switch with no path tells **cppbuild** to use current VS Code workspace. Add `-d` switch to output executed commands, `-c` switch to continue on errors or `-f` switch to force rebuild.
 1. Run `cppbuild --help` for more options.
 
 Detailed `c_cpp_build.json` file syntax is available at [cppbuild](https://github.com/tdjastrzebski/cppbuild/) GitHub site.
@@ -59,10 +60,10 @@ https://github.com/tdjastrzebski/vscode-cppbuild
 
 # Known issues
 1. Although created tasks are marked as Build tasks, they do not appear in **Build Tasks** group. It is not clear whether this is a bug or not. For details refer to [VS Code issue \#83378](https://github.com/microsoft/vscode/issues/83378#issuecomment-548838702).
-1. Occasionally, output parts are not visible in Terminal window. The problem does not occur if **cppbuild** is run from the command prompt. The problem may be related to multi threading.
 
 # Release notes
 * 1.0 Initial release
 * 1.1 `params` can be added on all levels, tool can work without C/C++ extension and `c_cpp_properties.json` file.
 * 1.2 Added support for incremental builds and `outputFile` build step property.
 * 1.3 [cppbuild](https://github.com/tdjastrzebski/cppbuild/) updated to significantly improved [version 1.3.0](https://github.com/tdjastrzebski/cppbuild#release-notes).
+* 1.3.13 tasks unexpectedly provided a task of type "shell" fix

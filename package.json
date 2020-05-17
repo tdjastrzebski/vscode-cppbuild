@@ -2,7 +2,7 @@
 	"name": "vscode-cppbuild",
 	"displayName": "Build++",
 	"description": "Multi-step incremental build tool, optimized for C/C++",
-	"version": "1.3.12",
+	"version": "1.3.13",
 	"preview": true,
 	"icon": "icon.png",
 	"publisher": "tdjastrzebski",
@@ -65,11 +65,11 @@
 		"vscode-cpptools": "^3.1.0"
 	},
 	"devDependencies": {
-		"@types/node": "^12.12.34",
+		"@types/node": "^12.12.39",
 		"@types/semver": "^6.2.1",
 		"@types/vscode": "1.40.0",
 		"eslint": "^6.8.0",
-		"typescript": "^3.8.3",
+		"typescript": "^3.9.2",
 		"vscode-test": "^1.3.0"
 	}
 }
