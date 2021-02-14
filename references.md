@@ -51,3 +51,5 @@ https://marketplace.visualstudio.com/manage/publishers/tdjastrzebski
 
 SVG -> PNG
 https://www.online-convert.com
+
+access token: 2avpaelss2ibn6p3e7vlgpppdspce4y2yhaityikcngbdp6p5w7q

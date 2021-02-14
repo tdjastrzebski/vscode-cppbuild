@@ -162,7 +162,6 @@ async function createInitialBuildFile(rootFolder: vscode.WorkspaceFolder): Promi
 				default:
 					continue; // unsupported compiler type - skip this config
 			}
-
 		}
 	} else {
 		await cppb.setSampleBuildConfig(buildStepsPath, 'gcc', cppb.CompilerType.gcc);
@@ -243,7 +242,7 @@ function buildTask(rootFolder: vscode.WorkspaceFolder, cmd: string, configName: 
 	const args: string[] = [];
 	cmd += ` "${configName}" ${buildType ? `"${buildType}"` : ''} -w "${rootFolder.uri.fsPath}" ${propertiesPath ? "" : "-p"}`;
 	const execution = new vscode.ShellExecution(cmd, args, options);
-	const kind: TaskDefinition = { type: 'cppbuild' };
+	const kind: TaskDefinition = { type: cppb.ToolName };
 	const name = `${configName}${buildType ? ' - ' + buildType : ''}`;
 	const task = new vscode.Task(kind, rootFolder, name, cppb.ToolName, execution);
 	task.group = vscode.TaskGroup.Build; // this does not seem to work
