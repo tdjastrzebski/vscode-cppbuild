@@ -2,7 +2,7 @@
 	"name": "vscode-cppbuild",
 	"displayName": "Build++",
 	"description": "Multi-step incremental build tool, optimized for C/C++",
-	"version": "1.3.16",
+	"version": "1.3.17",
 	"preview": true,
 	"icon": "icon.png",
 	"publisher": "tdjastrzebski",
