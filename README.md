@@ -12,10 +12,11 @@ You should see additional build tasks available.
 `cppbuild <config name> [build type] -w`  
 e.g. `cppbuild gcc debug -w`  
 `-w` switch with no path tells **cppbuild** to use the current VS Code workspace.  
-Add `-d` switch to output executed commands, `-c` switch to continue on errors or `-f` switch to force rebuild.  
+Add `-d` switch to output executed commands, `-c` switch to continue on errors or `-f` switch to force rebuild of all files.  
 
 Run `cppbuild --help` for more options.  
 
+# The idea
 Sample build type:
 ```yaml
 {
@@ -33,6 +34,15 @@ Sample build step:
   "command": "g++ -c ${buildTypeParams} (-I[$${includePath}]) (-D$${defines}) [${filePath}] -o [${outputFile}]"
 }
 ```
+Here is how it works:
+1. **command** (here g++ compiler) is run for every file matching **filePattern** (**/*.cpp).
+1. `(-I[$${includePath}])` and `(-D$${defines})` define sub-templates repeated for every **includePath** and **defines** value listed in corresponding configuration from **c_cpp_properties.json** file.
+1. `${fileName}`, `${filePath}` and `${fileDirectory}` are substituted by the name, path and relative directory of the file being processed.
+1. `${outputFile}` value is built as defined by **outputFile** template. Note that **outputFile** can be build using relative path of the file being processed. As a result, inside the output **build** folder directory structure will resemble the input directory structure. Required directory will be created if it does not exists.
+1. `${buildTypeParams}` is defined in **build type** section. For DEBUG build type `-O0 -g` switches will be added.
+1. Strings in `[]` are treated as file paths and will be quoted if path contains whitespace. Path separators may be modified depending on the OS.
+1. Be default, if **outputFile** already exists and is more recent than the processed input file, build for this file will not be performed. As a result, only modified files will be built (incremental build).
+
 # Build file syntax
 1. Build step `command` is repeated for every file matching **filePattern** - if **filePattern** is specified.  
 `${fileDirectory}`, `${filePath}` and `${fileName}` variables can be used in command.
@@ -46,7 +56,6 @@ Sample build step:
 1. Additional variables can be defined almost anywhere using `params` property. Variables defined on lower level take precedence.
 1. Variable values and **outputFile**/**outputDirectory** properties can contain other variables. Example: **outputFile**/**outputDirectory** variable can contain `${fileDirectory}`. As a result, inside the output **build** folder directory structure will resemble the input directory structure.
 1. Be default, if **outputFile** already exists and is more recent than the processed input file, build for this file will not be performed. As a result, only modified files will be built (incremental build).
-1. Detailed `c_cpp_build.json` file syntax is available at [cppbuild](https://github.com/tdjastrzebski/cppbuild/) GitHub site.
 
 # Predefined variables
 The following variables have been predefined:
