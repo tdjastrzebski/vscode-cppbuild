@@ -96,3 +96,4 @@ For details refer to [VS Code issue \#83378](https://github.com/microsoft/vscode
 * 1.3 **cppbuild** updated to significantly improved [version 1.3.0](https://github.com/tdjastrzebski/cppbuild#release-notes).
 * 1.3.13 `Tasks unexpectedly provided a task of type "shell"` fix.
 * 1.3.16 cppbuild updated to improved version 1.3.16.
+* 1.3.17 lodash updated to ver 4.17.20 to eliminate known vulnerabilities
