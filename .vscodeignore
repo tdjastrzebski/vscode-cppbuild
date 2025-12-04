@@ -15,3 +15,5 @@ tsconfig.json
 !LICENSE
 debug.log
 *.vsix
+references.md
+references.txt

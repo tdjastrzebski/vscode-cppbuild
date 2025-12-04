@@ -3,3 +3,4 @@ node_modules
 *.vsix
 debug.log
 references.md
+references.txt
