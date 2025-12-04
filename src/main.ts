@@ -10,12 +10,12 @@ import * as vscode from 'vscode';
 import * as cppb from 'cppbuild';
 import * as semver from 'semver';
 import { TaskDefinition } from 'vscode';
-import { TaskDetector } from './TaskDetector';
+import { TaskDetector } from './taskDetector';
 import { findToolCommand } from './vscode';
 
 const ExtensionName: string = "Build++";
-const MinToolVersion = '1.3.12';
-const MinNodeVersion = '10.0.0';
+const MinToolVersion = '1.3.21';
+const MinNodeVersion = '18.0.0';
 let _taskDetector: TaskDetector;
 let _channel: vscode.OutputChannel;
 
@@ -147,12 +147,15 @@ async function createInitialBuildFile(rootFolder: vscode.WorkspaceFolder): Promi
 		cppConfig = cppb.getJsonObject(propertiesPath);
 	}
 
-	const stringToEnumValue = <ET, T>(enumObj: ET, str: string): T => (enumObj as any)[Object.keys(enumObj).filter(k => (enumObj as any)[k] === str)[0]];
+	const stringToEnumValue = <T extends Record<string, string | number>, K extends keyof T>(enumObj: T, str: string): T[keyof T] | undefined => {
+		const key = Object.keys(enumObj).find(k => enumObj[k as keyof T] === str);
+		return key ? enumObj[key as keyof T] : undefined;
+	}
 
 	if (cppConfig) {
 		for (const config of cppConfig.configurations) {
 			if (config.intelliSenseMode === undefined) continue; // skip this config
-			const compilerType = stringToEnumValue<typeof cppb.CompilerType, cppb.CompilerType>(cppb.CompilerType, config.intelliSenseMode); // convert string enum name to enum value
+			const compilerType = stringToEnumValue(cppb.CompilerType, config.intelliSenseMode); // convert string enum name to enum value
 			switch (compilerType) {
 				case cppb.CompilerType.gcc:
 				case cppb.CompilerType.clang:
@@ -175,8 +178,8 @@ async function getToolVersion(toolName: string): Promise<string | undefined> {
 	try {
 		const result = await cppb.execCmd(`${toolName} --version`, {});
 		if (result.error) return undefined;
-		let version = result.stdout.split(/[\r\n]/).filter(line => !!line)[0];
-		if (version.substr(0, 1) == 'v') version = version.substr(1);
+		let version = result.stdout.toString().split(/[\r\n]/).filter(line => !!line)[0];
+		if (version.startsWith('v')) version = version.substring(1);
 		return version;
 	} catch {
 		return undefined;

@@ -30,7 +30,7 @@ SOFTWARE.
 'use strict';
 
 import * as vscode from 'vscode';
-import { FolderDetector } from './FolderDetector';
+import { FolderDetector } from './folderDetector';
 import { ToolName } from 'cppbuild';
 
 export class TaskDetector {
@@ -101,7 +101,7 @@ export class TaskDetector {
 	private updateProvider(): void {
 		if (!this.taskProvider && this.detectors.size > 0) {
 			const thisCapture = this;
-			this.taskProvider = vscode.workspace.registerTaskProvider(ToolName, {
+			this.taskProvider = vscode.tasks.registerTaskProvider(ToolName, {
 				provideTasks(): Promise<vscode.Task[]> {
 					return thisCapture.getTasks();
 				},
@@ -126,7 +126,7 @@ export class TaskDetector {
 		if (this.detectors.size === 0) {
 			return Promise.resolve([]);
 		} else if (this.detectors.size === 1) {
-			const detector: FolderDetector = this.detectors.values().next().value;
+			const detector: FolderDetector = this.detectors.values().next().value!;
 			const tasks = detector.getTasks();
 			return tasks;
 		} else {

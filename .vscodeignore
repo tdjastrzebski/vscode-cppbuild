@@ -14,3 +14,4 @@ tsconfig.json
 !README.md
 !LICENSE
 debug.log
+*.vsix

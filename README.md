@@ -8,15 +8,14 @@
 1. Modify created `c_cpp_build.json` file according to your needs.  
 1. Go to menu **Terminal** and choose **Run Task...** option.  
 You should see additional build tasks available.  
-1. Build can be run from terminal window as well:  
+1. Alternatively, build can be run from terminal window:  
 `cppbuild <config name> [build type] -w`  
 e.g. `cppbuild gcc debug -w`  
 `-w` switch with no path tells **cppbuild** to use the current VS Code workspace.  
 Add `-d` switch to output executed commands, `-c` switch to continue on errors or `-f` switch to force rebuild of all files.  
+Run `cppbuild --help` for more options.
 
-Run `cppbuild --help` for more options.  
-
-# The idea
+# The idea - simple JSON build file
 Sample build type:
 ```yaml
 {
@@ -34,6 +33,9 @@ Sample build step:
   "command": "g++ -c ${buildTypeParams} (-I[$${includePath}]) (-D$${defines}) [${filePath}] -o [${outputFile}]"
 }
 ```
+> Run: `cppbuild gcc gcc-x64 --initialize c_cpp_build.json` to create sample build file with typical **gcc**  settings.  
+> Other supported settings: **msvc** and **clang**
+
 Here is how it works:
 1. **command** (here g++ compiler) is run for every file matching **filePattern** (**/*.cpp).
 1. `(-I[$${includePath}])` and `(-D$${defines})` define sub-templates repeated for every **includePath** and **defines** value listed in corresponding configuration from **c_cpp_properties.json** file.
@@ -43,6 +45,7 @@ Here is how it works:
 1. Strings in `[]` are treated as file paths and will be quoted if path contains whitespace. Path separators may be modified depending on the OS.
 1. Be default, if **outputFile** already exists and is more recent than the processed input file, build for this file will not be performed. As a result, only modified files will be built (incremental build).
 
+Run: `cppbuild gcc gcc-x64 --initialize .vscode/c_cpp_build.json` to create sample build file with typical **gcc** settings. Other supported settings: **msvc** and **clang**
 # Build file syntax
 1. Build step `command` is repeated for every file matching **filePattern** - if **filePattern** is specified.  
 `${fileDirectory}`, `${filePath}` and `${fileName}` variables can be used in command.
