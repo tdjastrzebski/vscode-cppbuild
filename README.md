@@ -100,3 +100,4 @@ For details refer to [VS Code issue \#83378](https://github.com/microsoft/vscode
 * 1.3.13 `Tasks unexpectedly provided a task of type "shell"` fix.
 * 1.3.16 cppbuild updated to improved version 1.3.16.
 * 1.3.17 lodash updated to ver 4.17.20 to eliminate known vulnerabilities
+* 1.3.21 outdated packages updated, cppbuild updated to 1.3.21
