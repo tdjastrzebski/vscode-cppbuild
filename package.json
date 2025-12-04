@@ -29,7 +29,7 @@
 	},
 	"main": "./out/main.js",
 	"activationEvents": [
-		"*"
+		"onStartupFinished"
 	],
 	"contributes": {
 		"taskDefinitions": [
